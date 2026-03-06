@@ -36,21 +36,22 @@ jobs:
           if [ -d "eventbridge/cronogramas" ]; then
             for file in eventbridge/cronogramas/*.json; do
               NAME=$(basename "$file" .json)
-              
-              # 1. Verifica se o Schedule já existe na AWS
-              # Usamos '2>/dev/null' para não poluir o log com erros esperados
-              STATE=$(aws scheduler get-schedule --name "$NAME" --query "Name" --output text 2>/dev/null || echo "NOT_FOUND")
+              echo "--- Processando Schedule: $NAME ---"
 
-              if [ "$STATE" == "NOT_FOUND" ]; then
-                echo "🚀 Criando novo Schedule: $NAME"
+              # 1. Verifica se o Schedule já existe (Silencia o erro se não existir)
+              CHECK_EXISTS=$(aws scheduler get-schedule --name "$NAME" --query "Name" --output text 2>/dev/null || echo "NOT_FOUND")
+
+              if [ "$CHECK_EXISTS" == "NOT_FOUND" ]; then
+                echo "🚀 Criando novo Schedule..."
                 aws scheduler create-schedule --name "$NAME" \
                   --schedule-expression-timezone "America/Sao_Paulo" \
                   --cli-input-json "file://$file"
               else
-                echo "🔄 Atualizando Schedule existente: $NAME"
+                echo "🔄 Atualizando Schedule existente..."
                 aws scheduler update-schedule --name "$NAME" \
                   --schedule-expression-timezone "America/Sao_Paulo" \
                   --cli-input-json "file://$file"
               fi
+              echo "✅ $NAME sincronizado com sucesso."
             done
           fi
