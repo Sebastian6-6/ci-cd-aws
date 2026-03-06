@@ -28,19 +28,27 @@ jobs:
         run: |
           # 1. Trava de Segurança: Conta quantos arquivos existem na pasta glue/
           # O comando find procura arquivos (-type f). wc -l conta as linhas.
-          FILE_COUNT=$(find glue/ -maxdepth 1 -type f | wc -l)
-          
-          echo "Arquivos encontrados na pasta glue/: $FILE_COUNT"
+          FILE_COUNT_SCRIPTS=$(find glue/scripts -maxdepth 1 -type f | wc -l)
+          FILE_COUNT_LIBS=$(find glue/scripts -maxdepth 1 -type f | wc -l)   
+
+          echo "Arquivos encontrados na pasta glue/scripts: $FILE_COUNT_SCRIPTS"
+          echo "Arquivos encontrados na pasta glue/libs: $FILE_COUNT_LIBS"
 
           # 2. Lógica da Trava: Se a pasta estiver vazia, o script falha antes do sync
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "ERRO CRÍTICO: A pasta glue/ está vazia ou não existe!"
+          if [ "$FILE_COUNT_SCRIPTS" -eq 0 ]; then
+            echo "ERRO CRÍTICO: A pasta glue/scripts/ está vazia ou não existe!"
             echo "Abortando para evitar a exclusão acidental de todos os scripts no S3."
             exit 1
           fi
 
-          # 3. Sync com modo espelho (--delete)
-          # Só será executado se houver pelo menos 1 arquivo na pasta
-          aws s3 sync glue/ s3://scripts-automacao-pedro/artifacts/ --delete --exact-timestamps
-          
-          echo "Sincronização concluída com sucesso. S3 agora é um espelho fiel da pasta glue/."
+          # 3. Sincroniza apenas SCRIPTS (.py)
+          # Isso não afeta nada que esteja fora de /scripts/
+          if [ -d "glue/scripts" ] && [ "$(ls -A glue/scripts)" ]; then
+            aws s3 sync glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ --delete
+          fi
+
+          # 4. Sincroniza apenas LIBS (.whl)
+          # Isso não afeta nada que esteja fora de /libs/
+          if [ -d "glue/libs" ] && [ "$(ls -A glue/libs)" ]; then
+            aws s3 sync glue/libs/ s3://scripts-automacao-pedro/artifacts/libs/ --delete
+          fi
