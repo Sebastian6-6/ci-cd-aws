@@ -1,5 +1,5 @@
 {
-    "ScheduleExpression": "cron(0 12 * * ? *)",
+    "ScheduleExpression": "cron(0 11 * * ? *)",
     "Target": {
         "Arn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
         "RoleArn": "arn:aws:iam::338578590490:role/Scheduler-Invoke-Lambda-Role"
