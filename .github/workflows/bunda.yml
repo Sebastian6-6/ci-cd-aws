@@ -29,7 +29,7 @@ jobs:
           # 1. Trava de Segurança: Conta quantos arquivos existem na pasta glue/
           # O comando find procura arquivos (-type f). wc -l conta as linhas.
           FILE_COUNT_SCRIPTS=$(find glue/scripts -maxdepth 1 -type f | wc -l)
-          FILE_COUNT_LIBS=$(find glue/scripts -maxdepth 1 -type f | wc -l)   
+          FILE_COUNT_LIBS=$(find glue/libs -maxdepth 1 -type f | wc -l)   
 
           echo "Arquivos encontrados na pasta glue/scripts: $FILE_COUNT_SCRIPTS"
           echo "Arquivos encontrados na pasta glue/libs: $FILE_COUNT_LIBS"
@@ -40,6 +40,12 @@ jobs:
             echo "Abortando para evitar a exclusão acidental de todos os scripts no S3."
             exit 1
           fi
+
+          if [ "$FILE_COUNT_LIBS" -eq 0 ]; then
+            echo "ERRO CRÍTICO: A pasta glue/libs/ está vazia ou não existe!"
+            echo "Abortando para evitar a exclusão acidental de todos as libs no S3."
+            exit 1
+          fi          
 
           # 3. Sincroniza apenas SCRIPTS (.py)
           # Isso não afeta nada que esteja fora de /scripts/
