@@ -1,4 +1,4 @@
-name: Deploy Lambda - Auto Sync
+name: CD Lambda - Auto Sync
 
 on:
   push:

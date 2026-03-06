@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths: ['eventbridge/**']
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -14,7 +18,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
-
+      
       - name: Deploy Schedules (Cronogramas)
         run: |
           if [ -d "eventbridge/cronogramas" ]; then
