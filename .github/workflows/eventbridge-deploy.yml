@@ -1,4 +1,4 @@
-name: CD EventBridge
+name: CD EventBridge - Update Only
 
 on:
   push:
@@ -18,39 +18,39 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
-      
-      - name: Deploy Schedules (Cronogramas)
+
+      # --- BLOCO 1: SCHEDULES (CRONOGRAMAS) ---
+      - name: Update Existing Schedules
         run: |
           if [ -d "eventbridge/cronogramas" ]; then
             for file in eventbridge/cronogramas/*.json; do
               NAME=$(basename "$file" .json)
-              echo "Atualizando Schedule: $NAME"
+              echo "Validando Schedule: $NAME"
+              
+              # Tenta atualizar. Se falhar (ResourceNotFound), o workflow quebra.
               aws scheduler update-schedule --name "$NAME" \
                 --schedule-expression-timezone "America/Sao_Paulo" \
                 --cli-input-json "file://$file"
+              
+              echo "✅ Schedule $NAME atualizado."
             done
           fi
 
-      - name: Deploy Schedules (Check-then-Act)
+      # --- BLOCO 2: RULES (REGRAS) ---
+      - name: Update Existing Rules
         run: |
-          if [ -d "eventbridge/cronogramas" ]; then
-            for file in eventbridge/cronogramas/*.json; do
+          if [ -d "eventbridge/regras" ]; then
+            for file in eventbridge/regras/*.json; do
               NAME=$(basename "$file" .json)
-              
-              # Tenta buscar o nome do schedule. Se não achar, a variável fica "NOT_FOUND"
-              # O '2>/dev/null' impede que o erro da AWS quebre o shell aqui
-              EXISTS=$(aws scheduler get-schedule --name "$NAME" --query "Name" --output text 2>/dev/null || echo "NOT_FOUND")
+              echo "Validando Rule: $NAME"
 
-              if [ "$EXISTS" == "NOT_FOUND" ]; then
-                echo "🚀 Criando novo Schedule: $NAME"
-                aws scheduler create-schedule --name "$NAME" \
-                  --schedule-expression-timezone "America/Sao_Paulo" \
-                  --cli-input-json "file://$file"
+              # Passo de checagem obrigatório para evitar criação automática
+              if aws events describe-rule --name "$NAME" > /dev/null 2>&1; then
+                aws events put-rule --name "$NAME" --cli-input-json "file://$file"
+                echo "✅ Rule $NAME atualizada."
               else
-                echo "🔄 Atualizando Schedule existente: $NAME"
-                aws scheduler update-schedule --name "$NAME" \
-                  --schedule-expression-timezone "America/Sao_Paulo" \
-                  --cli-input-json "file://$file"
+                echo "❌ ERRO: Rule $NAME não existe no console. Crie-a manualmente antes de versionar."
+                exit 1
               fi
             done
           fi
