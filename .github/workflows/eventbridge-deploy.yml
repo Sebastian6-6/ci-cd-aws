@@ -31,17 +31,22 @@ jobs:
             done
           fi
 
-      - name: Deploy Rules (Regras)
+      - name: Deploy Schedules (Cronogramas)
         run: |
-          if [ -d "eventbridge/regras" ]; then
-            for file in eventbridge/regras/*.json; do
-              RULE_NAME=$(basename "$file" .json)
-              echo "Sincronizando Regra: $RULE_NAME"
+          if [ -d "eventbridge/cronogramas" ]; then
+            for file in eventbridge/cronogramas/*.json; do
+              NAME=$(basename "$file" .json)
+              echo "Processando Schedule: $NAME"
               
-              # Injeta a configuração da regra
-              aws events put-rule --name "$RULE_NAME" --cli-input-json "file://$file"
+              # Tenta criar o agendamento primeiro
+              aws scheduler create-schedule --name "$NAME" \
+                --schedule-expression-timezone "America/Sao_Paulo" \
+                --cli-input-json "file://$file" || \
+              # Se o comando acima falhar (recurso já existe), executa o update
+              aws scheduler update-schedule --name "$NAME" \
+                --schedule-expression-timezone "America/Sao_Paulo" \
+                --cli-input-json "file://$file"
               
-              # Nota Técnica: Uma regra sem 'Target' não faz nada. 
-              # Em um cenário real, aqui você usaria 'aws events put-targets'
+              echo "✅ $NAME sincronizado com sucesso."
             done
           fi
