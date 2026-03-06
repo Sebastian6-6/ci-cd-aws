@@ -25,7 +25,7 @@ jobs:
       - name: Zip and Update Lambda
         run: |
           # Entra na pasta da função para o zip não ter pastas aninhadas
-          cd Lambda/lambda-teste/
+          cd lambda/lambda-teste/
           zip -r function.zip .
           
           # Atualiza o código na AWS
