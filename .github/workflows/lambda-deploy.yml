@@ -3,7 +3,7 @@ name: Deploy Lambda - Auto Sync
 on:
   push:
     branches: [ main ]
-    paths: [ 'Lambda/lambda-teste/**' ] # Só roda se mudar algo nesta pasta
+    paths: [ 'lambda/lambda-teste/**' ] # Só roda se mudar algo nesta pasta
 
 permissions:
   id-token: write
