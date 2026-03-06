@@ -7,5 +7,5 @@
     }
   },
   "State": "ENABLED",
-  "Description": "Regra para detectar novos scripts dentro do bucket"
+  "Description": "Regra para detectar novos scripts no bucket"
 }
