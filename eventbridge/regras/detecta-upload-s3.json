@@ -1,11 +1,9 @@
 {
-  "EventPattern": {
-    "source": ["aws.s3"],
-    "detail-type": ["Object Created"],
-    "detail": {
-      "bucket": { "name": ["scripts-automacao-pedro"] }
+  "source": ["aws.s3"],
+  "detail-type": ["Object Created"],
+  "detail": {
+    "bucket": {
+      "name": ["scripts-automacao-pedro"]
     }
-  },
-  "State": "ENABLED",
-  "Description": "Regra para detectar novos scripts no bucket"
+  }
 }

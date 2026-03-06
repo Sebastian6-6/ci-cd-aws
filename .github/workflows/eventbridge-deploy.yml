@@ -44,12 +44,14 @@ jobs:
               NAME=$(basename "$file" .json)
               echo "Validando Rule: $NAME"
 
-              # Passo de checagem obrigatório para evitar criação automática
               if aws events describe-rule --name "$NAME" > /dev/null 2>&1; then
-                aws events put-rule --name "$NAME" --cli-input-json "file://$file"
-                echo "✅ Rule $NAME atualizada."
+                # O Pulo do Gato: usamos file:// para ler o conteúdo como String
+                aws events put-rule --name "$NAME" \
+                  --event-pattern "file://$file" \
+                  --state ENABLED
+                echo "✅ Rule $NAME atualizada com sucesso."
               else
-                echo "❌ ERRO: Rule $NAME não existe no console. Crie-a manualmente antes de versionar."
+                echo "❌ ERRO: Rule $NAME não encontrada no console."
                 exit 1
               fi
             done
