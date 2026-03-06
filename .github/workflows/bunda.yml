@@ -1,0 +1,46 @@
+name: CD Glue Job - Safe Mirror Sync
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'glue/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4  
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Safety Check and Sync
+        run: |
+          # 1. Trava de Segurança: Conta quantos arquivos existem na pasta glue/
+          # O comando find procura arquivos (-type f). wc -l conta as linhas.
+          FILE_COUNT=$(find glue/ -maxdepth 1 -type f | wc -l)
+          
+          echo "Arquivos encontrados na pasta glue/: $FILE_COUNT"
+
+          # 2. Lógica da Trava: Se a pasta estiver vazia, o script falha antes do sync
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "ERRO CRÍTICO: A pasta glue/ está vazia ou não existe!"
+            echo "Abortando para evitar a exclusão acidental de todos os scripts no S3."
+            exit 1
+          fi
+
+          # 3. Sync com modo espelho (--delete)
+          # Só será executado se houver pelo menos 1 arquivo na pasta
+          aws s3 sync glue/ s3://scripts-automacao-pedro/artifacts/ --delete --exact-timestamps
+          
+          echo "Sincronização concluída com sucesso. S3 agora é um espelho fiel da pasta glue/."

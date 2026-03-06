@@ -1,0 +1,34 @@
+name: Deploy Lambda - Auto Sync
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'Lambda/lambda-teste/**' ] # Só roda se mudar algo nesta pasta
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Zip and Update Lambda
+        run: |
+          # Entra na pasta da função para o zip não ter pastas aninhadas
+          cd Lambda/lambda-teste-vini/
+          zip -r function.zip .
+          
+          # Atualiza o código na AWS
+          aws lambda update-function-code \
+            --function-name lambda-teste-vini \
+            --zip-file fileb://function.zip
