@@ -1,0 +1,43 @@
+name: CD Step Functions
+
+on:
+  push:
+    branches: [main]
+    paths: ['stepfunctions/*.json']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Validate and Update State Machine
+        run: |
+          for file in stepfunctions/*.json; do
+            SM_NAME=$(basename "$file" .json)
+            echo "Processando: $SM_NAME"
+            
+            # Validação de sintaxe JSON (Fail Fast)
+            jq . "$file" > /dev/null || exit 1
+            
+            # Busca o ARN dinamicamente
+            SM_ARN=$(aws stepfunctions list-state-machines --query "stateMachines[?name=='$SM_NAME'].stateMachineArn" --output text)
+            
+            if [ "$SM_ARN" != "None" ] && [ -n "$SM_ARN" ]; then
+              aws stepfunctions update-state-machine \
+                --state-machine-arn "$SM_ARN" \
+                --definition "$(cat "$file")"
+              echo "✅ $SM_NAME atualizada com sucesso."
+            else
+              echo "❌ Erro: State Machine $SM_NAME não encontrada no console."
+              exit 1
+            fi
+          done

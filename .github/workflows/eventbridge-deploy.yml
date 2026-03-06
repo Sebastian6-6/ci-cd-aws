@@ -1,0 +1,43 @@
+name: CD EventBridge
+
+on:
+  push:
+    branches: [main]
+    paths: ['eventbridge/**']
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Deploy Schedules (Cronogramas)
+        run: |
+          if [ -d "eventbridge/cronogramas" ]; then
+            for file in eventbridge/cronogramas/*.json; do
+              NAME=$(basename "$file" .json)
+              echo "Atualizando Schedule: $NAME"
+              aws scheduler update-schedule --name "$NAME" \
+                --schedule-expression-timezone "America/Sao_Paulo" \
+                --cli-input-json "file://$file"
+            done
+          fi
+
+      - name: Deploy Rules (Regras)
+        run: |
+          if [ -d "eventbridge/regras" ]; then
+            for file in eventbridge/regras/*.json; do
+              RULE_NAME=$(basename "$file" .json)
+              echo "Sincronizando Regra: $RULE_NAME"
+              
+              # Injeta a configuração da regra
+              aws events put-rule --name "$RULE_NAME" --cli-input-json "file://$file"
+              
+              # Nota Técnica: Uma regra sem 'Target' não faz nada. 
+              # Em um cenário real, aqui você usaria 'aws events put-targets'
+            done
+          fi

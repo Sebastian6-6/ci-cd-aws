@@ -1,0 +1,13 @@
+{
+  "StartAt": "PassState",
+  "States": {
+    "PassState": {
+      "Type": "Pass",
+      "Result": {
+        "status": "v2.0_via_github_actions",
+        "mensagem": "Workflow de Step Functions validado!"
+      },
+      "End": true
+    }
+  }
+}
