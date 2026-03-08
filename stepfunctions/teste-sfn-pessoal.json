@@ -1,0 +1,30 @@
+{
+  "definition": {
+    "Comment": "A description of my state machine",
+    "QueryLanguage": "JSONata",
+    "StartAt": "Step Functions StartExecution",
+    "States": {
+      "Step Functions StartExecution": {
+        "Arguments": {
+          "Input": {
+            "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID": "{% $states.context.Execution.Id %}",
+            "StatePayload": "Hello from Step Functions!"
+          },
+          "StateMachineArn": "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:STATE_MACHINE_NAME"
+        },
+        "End": true,
+        "Resource": "arn:aws:states:::states:startExecution.sync:2",
+        "Type": "Task"
+      }
+    }
+  },
+  "loggingConfiguration": {
+    "includeExecutionData": false,
+    "level": "OFF"
+  },
+  "roleArn": "arn:aws:iam::338578590490:role/service-role/StepFunctions-teste-sfn-pessoal-role-u9xrl5acz",
+  "tracingConfiguration": {
+    "enabled": false
+  },
+  "type": "STANDARD"
+}

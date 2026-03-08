@@ -1,11 +1,29 @@
 {
-  "EventPattern": {
-    "source": ["aws.s3"],
-    "detail-type": ["Object Created"],
-    "detail": {
-      "bucket": { "name": ["scripts-automacao-pedro"] }
-    }
+  "Rule": {
+    "Description": "",
+    "EventPattern": {
+      "detail": {
+        "bucket": {
+          "name": [
+            "scripts-automacao-pedro"
+          ]
+        }
+      },
+      "detail-type": [
+        "Object Created"
+      ],
+      "source": [
+        "aws.s3"
+      ]
+    },
+    "Name": "detecta-upload-s3",
+    "State": "ENABLED"
   },
-  "State": "ENABLED",
-  "Description": "Regra para detectar novos scripts no bucket"
+  "Targets": [
+    {
+      "Arn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
+      "Id": "73f99320-ab81-4be3-b7bf-8d564b963027",
+      "RoleArn": "arn:aws:iam::338578590490:role/service-role/Amazon_EventBridge_Invoke_Lambda_1686998167"
+    }
+  ]
 }

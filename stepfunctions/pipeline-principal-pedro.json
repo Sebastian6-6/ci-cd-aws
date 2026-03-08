@@ -1,13 +1,24 @@
 {
-  "StartAt": "PassState",
-  "States": {
-    "PassState": {
-      "Type": "Pass",
-      "Result": {
-        "status": "v2.0_via_github_actions",
-        "mensagem": "Workflow de Step Functions validado!"
-      },
-      "End": true
+  "definition": {
+    "StartAt": "PassState",
+    "States": {
+      "PassState": {
+        "End": true,
+        "Result": {
+          "mensagem": "Workflow de Step Functions validado!",
+          "status": "v2.0_via_github_actions"
+        },
+        "Type": "Pass"
+      }
     }
-  }
+  },
+  "loggingConfiguration": {
+    "includeExecutionData": false,
+    "level": "OFF"
+  },
+  "roleArn": "arn:aws:iam::338578590490:role/service-role/StepFunctions-pipeline-principal-pedro-role-4x842wocd",
+  "tracingConfiguration": {
+    "enabled": false
+  },
+  "type": "STANDARD"
 }

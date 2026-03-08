@@ -1,4 +1,4 @@
-name: CD EventBridge - Update Only
+name: CD EventBridge
 
 on:
   push:
@@ -19,40 +19,20 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      # --- BLOCO 1: SCHEDULES (CRONOGRAMAS) ---
-      - name: Update Existing Schedules
+      # Deploy de Rules
+      - name: Sync Rules
         run: |
-          if [ -d "eventbridge/cronogramas" ]; then
-            for file in eventbridge/cronogramas/*.json; do
-              NAME=$(basename "$file" .json)
-              echo "Validando Schedule: $NAME"
-              
-              # Tenta atualizar. Se falhar (ResourceNotFound), o workflow quebra.
-              aws scheduler update-schedule --name "$NAME" \
-                --schedule-expression-timezone "America/Sao_Paulo" \
-                --cli-input-json "file://$file"
-              
-              echo "✅ Schedule $NAME atualizado."
-            done
-          fi
+          for file in eventbridge/regras/*.json; do
+            NAME=$(basename "$file" .json)
+            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' "$file")
+            TARGETS_JSON=$(jq -c '.Targets' "$file")
+            aws events put-rule --cli-input-json "$RULE_JSON"
+            aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
+          done
 
-      # --- BLOCO 2: RULES (REGRAS) ---
-      - name: Update Existing Rules
+      # Deploy de Schedules
+      - name: Sync Schedules
         run: |
-          if [ -d "eventbridge/regras" ]; then
-            for file in eventbridge/regras/*.json; do
-              NAME=$(basename "$file" .json)
-              echo "Validando Rule: $NAME"
-
-              if aws events describe-rule --name "$NAME" > /dev/null 2>&1; then
-                # O Pulo do Gato: usamos file:// para ler o conteúdo como String
-                aws events put-rule --name "$NAME" \
-                  --event-pattern "file://$file" \
-                  --state ENABLED
-                echo "✅ Rule $NAME atualizada com sucesso."
-              else
-                echo "❌ ERRO: Rule $NAME não encontrada no console."
-                exit 1
-              fi
-            done
-          fi
+          for file in eventbridge/cronogramas/*.json; do
+            aws scheduler update-schedule --cli-input-json "file://$file"
+          done
