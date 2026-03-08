@@ -3,7 +3,7 @@ name: CD Step Functions
 on:
   push:
     branches: [main]
-    paths: ['stepfunctions/*.json']
+    paths: ['stepfunctions/**']
 
 permissions:
   id-token: write
