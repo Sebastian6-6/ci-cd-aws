@@ -1,6 +1,6 @@
 {
   "Rule": {
-    "Description": "",
+    "Description": "Teste top",
     "EventPattern": {
       "detail-type": [
         "Object Created"

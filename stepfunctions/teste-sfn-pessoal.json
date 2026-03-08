@@ -8,7 +8,7 @@
         "Arguments": {
           "Input": {
             "AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID": "{% $states.context.Execution.Id %}",
-            "StatePayload": "Hello from Step Functions!"
+            "StatePayload": "Hello from TESTE TOP Step Functions!"
           },
           "StateMachineArn": "arn:aws:states:REGION:ACCOUNT_ID:stateMachine:STATE_MACHINE_NAME"
         },

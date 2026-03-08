@@ -4,7 +4,7 @@
   },
   "GroupName": "default",
   "Name": "teste-sched-pessoal",
-  "ScheduleExpression": "cron(0 12 1 4 ? 2026)",
+  "ScheduleExpression": "cron(0 11 1 4 ? 2026)",
   "ScheduleExpressionTimezone": "America/Sao_Paulo",
   "State": "ENABLED",
   "Target": {
