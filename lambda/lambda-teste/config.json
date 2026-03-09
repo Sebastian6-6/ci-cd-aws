@@ -1,0 +1,8 @@
+{
+  "Environment": {},
+  "Handler": "lambda_function.lambda_handler",
+  "Layers": [],
+  "MemorySize": 128,
+  "Runtime": "python3.14",
+  "Timeout": 3
+}

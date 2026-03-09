@@ -19,21 +19,26 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Sync EventBridge Rules
+      - name: Update EventBridge Rules
         run: |
           for file in eventbridge/regras/*.json; do
+            [ -e "$file" ] || continue
             NAME=$(basename "$file" .json)
-            echo "--- Sincronizando Regra: $NAME ---"
+            echo "--- Atualizando Regra: $NAME ---"
             
-            # 1. Prepara o JSON da Rule (Stringify no EventPattern)
-            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' "$file")
+            # Higieniza TODOS os nulls antes de formatar para o CLI
+            jq 'del(..|nulls)' "$file" > clean.json
             
-            # 2. Prepara o JSON dos Targets
-            TARGETS_JSON=$(jq -c '.Targets' "$file")
+            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' clean.json)
+            TARGETS_JSON=$(jq -c '.Targets' clean.json)
             
-            # 3. Deploy
+            # put-rule atua como update nativamente se a regra existir
             aws events put-rule --cli-input-json "$RULE_JSON"
-            aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
             
-            echo "✅ Regra e Targets de $NAME atualizados."
+            TARGET_COUNT=$(jq '.Targets | length' clean.json)
+            if [ "$TARGET_COUNT" -gt 0 ]; then
+              aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
+            fi
+            
+            rm clean.json
           done

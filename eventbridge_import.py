@@ -3,19 +3,16 @@ import json
 import os
 from botocore.exceptions import ClientError
 
-# --- CONFIGURAÇÃO DE SESSÃO ---
 try:
     session = boto3.Session(profile_name="pessoal", region_name="us-east-2")
 except:
     session = boto3.Session(region_name="us-east-2")
 
-sfn_client = session.client("stepfunctions")
 eb_client = session.client("events")
 scheduler_client = session.client("scheduler")
 
 def save_if_changed(path, new_content):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    # sort_keys=True é vital para evitar commits desnecessários no Git por reordenação de chaves
     content_to_save = json.dumps(new_content, indent=2, ensure_ascii=False, sort_keys=True)
 
     if os.path.exists(path):
@@ -25,7 +22,7 @@ def save_if_changed(path, new_content):
 
     with open(path, "w", encoding="utf-8") as f:
         f.write(content_to_save)
-    print(f"[+] ATUALIZADO: {os.path.basename(path)}")
+    print(f"[+] EB ATUALIZADO: {os.path.basename(path)}")
     return True
 
 def purge_orphans(directory, expected_files):
@@ -37,34 +34,10 @@ def purge_orphans(directory, expected_files):
                 os.remove(file_path)
                 print(f"[🔥 PURGE] Removido arquivo órfão: {filename}")
 
-# --- EXPORTADORES ---
-
-def export_stepfunctions():
-    out_dir = "./stepfunctions"
-    seen_files = []
-    paginator = sfn_client.get_paginator("list_state_machines")
-    for page in paginator.paginate():
-        for sm in page.get("stateMachines", []):
-            name = f"{sm['name']}.json"
-            seen_files.append(name)
-            det = sfn_client.describe_state_machine(stateMachineArn=sm["stateMachineArn"])
-            
-            # Captura o estado completo para deploy
-            data = {
-                "roleArn": det["roleArn"],
-                "type": det["type"],
-                "definition": json.loads(det["definition"]),
-                "loggingConfiguration": det.get("loggingConfiguration"),
-                "tracingConfiguration": det.get("tracingConfiguration")
-            }
-            save_if_changed(os.path.join(out_dir, name), data)
-    purge_orphans(out_dir, seen_files)
-
 def export_eventbridge():
     r_dir, s_dir = "./eventbridge/regras", "./eventbridge/cronogramas"
     seen_rules, seen_scheds = [], []
     
-    # 1. Rules & Targets
     paginator = eb_client.get_paginator("list_rules")
     for page in paginator.paginate(EventBusName="default"):
         for rule in page.get("Rules", []):
@@ -75,12 +48,11 @@ def export_eventbridge():
             desc = eb_client.describe_rule(Name=rule['Name'])
             targets_raw = eb_client.list_targets_by_rule(Rule=rule['Name']).get("Targets", [])
             
-            # Voltando ao padrão .get() para garantir que a chave exista no JSON (Contrato Fixo)
             clean_targets = [
                 {
-                    "Id": t["Id"],
-                    "Arn": t["Arn"],
-                    "RoleArn": t.get("RoleArn"), # Retorna null se não existir, mantendo compatibilidade
+                    "Id": t.get("Id"),
+                    "Arn": t.get("Arn"),
+                    "RoleArn": t.get("RoleArn"),
                     "Input": t.get("Input"),
                     "InputPath": t.get("InputPath"),
                     "RetryPolicy": t.get("RetryPolicy"),
@@ -91,16 +63,15 @@ def export_eventbridge():
 
             save_if_changed(os.path.join(r_dir, name), {
                 "Rule": {
-                    "Name": rule['Name'],
-                    "EventPattern": json.loads(desc["EventPattern"]),
-                    "State": desc["State"],
-                    "Description": desc.get("Description", "")
+                    "Name": rule.get('Name'),
+                    "EventPattern": json.loads(desc.get("EventPattern", "{}")),
+                    "State": desc.get("State"),
+                    "Description": desc.get("Description")
                 },
                 "Targets": clean_targets
             })
     purge_orphans(r_dir, seen_rules)
 
-    # 2. Schedules
     try:
         groups = scheduler_client.list_schedule_groups()["ScheduleGroups"]
         for group in groups:
@@ -112,34 +83,25 @@ def export_eventbridge():
                     det = scheduler_client.get_schedule(Name=s['Name'], GroupName=group["Name"])
 
                     save_if_changed(os.path.join(s_dir, name), {
-                        "Name": s['Name'],
-                        "GroupName": group["Name"],
-                        "State": det["State"],
-                        "ScheduleExpression": det["ScheduleExpression"],
-                        # Essencial para garantir o horário de São Paulo
-                        "ScheduleExpressionTimezone": det.get("ScheduleExpressionTimezone", "America/Sao_Paulo"),
-                        "FlexibleTimeWindow": det["FlexibleTimeWindow"],
+                        "Name": s.get('Name'),
+                        "GroupName": group.get("Name"),
+                        "State": det.get("State"),
+                        "ScheduleExpression": det.get("ScheduleExpression"),
+                        "ScheduleExpressionTimezone": det.get("ScheduleExpressionTimezone"),
+                        "FlexibleTimeWindow": det.get("FlexibleTimeWindow"),
                         "Target": {
-                            "Arn": det["Target"]["Arn"],
-                            "RoleArn": det["Target"]["RoleArn"],
-                            "Input": det["Target"].get("Input", "{}"),
-                            # Resiliência
+                            "Arn": det["Target"].get("Arn"),
+                            "RoleArn": det["Target"].get("RoleArn"),
+                            "Input": det["Target"].get("Input"),
                             "RetryPolicy": det["Target"].get("RetryPolicy"),
                             "DeadLetterConfig": det["Target"].get("DeadLetterConfig")
                         },
-                        # Governança de ciclo de vida
-                        "ActionAfterCompletion": det.get("ActionAfterCompletion", "NONE"),
-                        "StartDate": str(det.get("StartDate", "")),
-                        "EndDate": str(det.get("EndDate", ""))
+                        "ActionAfterCompletion": det.get("ActionAfterCompletion")
                     })
-                    
     except ClientError as e:
         print(f"Erro no Scheduler: {e}")
     
     purge_orphans(s_dir, seen_scheds)
 
 if __name__ == "__main__":
-    print("🚀 Iniciando Exportação Mirror (Purge Enabled)...")
-    export_stepfunctions()
     export_eventbridge()
-    print("\n✅ Sincronização finalizada.")

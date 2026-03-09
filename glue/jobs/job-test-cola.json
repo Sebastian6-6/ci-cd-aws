@@ -1,17 +1,30 @@
 {
-  "Command": {
-    "Name": "glueetl",
-    "PythonVersion": "3",
-    "ScriptLocation": "s3://scripts-automacao-pedro/artifacts/scripts/cola.py"
+  "JobName": "job-test-cola",
+  "JobUpdate": {
+    "Command": {
+      "Name": "glueetl",
+      "PythonVersion": "3",
+      "ScriptLocation": "s3://scripts-automacao-pedro/artifacts/scripts/cola.py"
+    },
+    "Connections": null,
+    "DefaultArguments": {
+      "--JOB_NAME": "job-test-cola",
+      "--enable-job-insights": "true",
+      "--job-language": "python"
+    },
+    "Description": null,
+    "ExecutionClass": null,
+    "ExecutionProperty": {
+      "MaxConcurrentRuns": 1
+    },
+    "GlueVersion": "4.0",
+    "MaxRetries": 0,
+    "NonOverridableArguments": null,
+    "NumberOfWorkers": 2,
+    "Role": "arn:aws:iam::338578590490:role/GlueServiceRole",
+    "SecurityConfiguration": null,
+    "Timeout": 2880,
+    "WorkerType": "G.1X"
   },
-  "DefaultArguments": {
-    "--JOB_NAME": "job-test-cola",
-    "--enable-job-insights": "true",
-    "--job-language": "python"
-  },
-  "GlueVersion": "4.0",
-  "Name": "job-test-cola",
-  "NumberOfWorkers": 2,
-  "Role": "arn:aws:iam::338578590490:role/GlueServiceRole",
-  "WorkerType": "G.1X"
+  "Tags": {}
 }

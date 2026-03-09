@@ -1,5 +1,6 @@
 {
   "Rule": {
+    "Description": null,
     "EventPattern": {
       "detail-type": [
         "Object Created"
@@ -14,7 +15,12 @@
   "Targets": [
     {
       "Arn": "arn:aws:states:us-east-2:338578590490:stateMachine:teste-sfn-pessoal",
-      "Id": "5031ce8a-85d7-428e-8d56-389d0ceafdb5"
+      "DeadLetterConfig": null,
+      "Id": "5031ce8a-85d7-428e-8d56-389d0ceafdb5",
+      "Input": null,
+      "InputPath": null,
+      "RetryPolicy": null,
+      "RoleArn": "arn:aws:iam::338578590490:role/service-role/Amazon_EventBridge_Invoke_StepFunctions_410157583"
     }
   ]
 }

@@ -1,4 +1,4 @@
-name: CD Glue Scripts - S3 Sync
+name: CD Glue Scripts - Sync
 
 on:
   push:
@@ -14,22 +14,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Safety Check and Sync Scripts
+      - name: Sync Scripts to S3
         run: |
-          FILE_COUNT=$(find glue/scripts -maxdepth 1 -type f | wc -l)
-          echo "Scripts encontrados: $FILE_COUNT"
-
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "❌ ERRO: Pasta glue/scripts/ vazia. Abortando para proteger o S3."
-            exit 1
-          fi
-
-          aws s3 sync glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ --delete
-          echo "✅ Scripts sincronizados com sucesso."
+          echo "--- Sincronizando Scripts PySpark/Python ---"
+          # O parâmetro --delete garante o GitOps: se você apagar o script no Git, ele apaga no S3
+          # O parâmetro --exact-timestamps força a verificação rigorosa de modificação
+          aws s3 sync ./glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ \
+            --delete \
+            --exact-timestamps \
+            --exclude "*" \
+            --include "*.py"

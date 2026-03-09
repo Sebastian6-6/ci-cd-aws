@@ -1,42 +1,52 @@
-name: CD Glue Jobs - Metadata Update
+name: CD Glue Jobs - Sync
 
 on:
   push:
     branches: [main]
-    paths: ['glue/jobs/*.json']
+    paths: ['glue/jobs/**']
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  deploy-metadata:
+  deploy-jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Update Glue Job Entities
+      - name: Update Glue Jobs and Tags
         run: |
-          for file in glue/jobs/*.json; do
-            NAME=$(basename "$file" .json)
-            echo "--- Sincronizando Metadata do Job: $NAME ---"
-            
-            # Validação de sintaxe JSON
-            jq . "$file" > /dev/null || exit 1
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGION="us-east-2"
 
-            # Extrai o corpo da configuração removendo o Name para a API
-            # O parâmetro --job-name é passado separadamente
-            JOB_CONFIG=$(jq -c 'del(.Name)' "$file")
+          for file in glue/jobs/*.json; do
+            [ -e "$file" ] || continue
+            NAME=$(jq -r '.JobName' "$file")
+            echo "--- Atualizando Job: $NAME ---"
             
-            aws glue update-job \
-              --job-name "$NAME" \
-              --job-update "$JOB_CONFIG"
+            # 1. Higieniza os nulos apenas do bloco de configuração (Isolamento de falhas)
+            jq -c '.JobUpdate | del(..|nulls)' "$file" > update_payload.json
             
-            echo "✅ Configuração de $NAME atualizada."
+            # 2. Atualiza a infraestrutura do Job
+            aws glue update-job --job-name "$NAME" --job-update "file://update_payload.json"
+            
+            # 3. Tratamento de Governança (Tags)
+            # O jq 'length' verifica se o dicionário de tags não está vazio
+            TAGS_COUNT=$(jq '.Tags | length' "$file")
+            if [ "$TAGS_COUNT" -gt 0 ]; then
+              echo "Aplicando Tags de Governança..."
+              JOB_ARN="arn:aws:glue:${REGION}:${ACCOUNT_ID}:job/${NAME}"
+              
+              # Converte o dicionário JSON nativo para o formato Key=Value esperado pela CLI da AWS
+              TAGS_STRING=$(jq -r '.Tags | to_entries | map("\(.key)=\(.value)") | join(",")' "$file")
+              
+              aws glue tag-resource --resource-arn "$JOB_ARN" --tags-to-add "$TAGS_STRING"
+            fi
+            
+            rm update_payload.json
           done

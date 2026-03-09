@@ -3,7 +3,7 @@ name: CD Lambda
 on:
   push:
     branches: [ main ]
-    paths: [ 'lambda/**' ] # Monitora qualquer mudança dentro da pasta lambda
+    paths: [ 'lambda/**' ]
 
 permissions:
   id-token: write
@@ -16,7 +16,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2 # Necessário para o git diff identificar mudanças
+          fetch-depth: 0 # Necessário para o git diff mapear todo o histórico de commits no push
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -24,29 +24,48 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Identify and Update Changed Lambdas
+      - name: Deploy Lambdas (Code and Infra Config)
         run: |
-          # 1. Identifica quais pastas dentro de /lambda foram alteradas neste commit
-          CHANGED_DIRS=$(git diff --name-only HEAD^ HEAD | grep '^lambda/' | cut -d/ -f2 | sort -u)
+          # Identifica diretórios modificados comparando o último estado conhecido com o commit atual
+          CHANGED_DIRS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^lambda/' | cut -d/ -f2 | sort -u)
 
           for dir in $CHANGED_DIRS; do
             if [ -d "lambda/$dir" ]; then
               echo "🚀 Processando deploy da Lambda: $dir"
-              
-              # 2. Entra na pasta e gera o ZIP
-              # O parâmetro -x exclui o .aws_hash para não sujar o ambiente da AWS
               cd "lambda/$dir"
-              zip -r function.zip . -x ".aws_hash"
               
-              # 3. Deploy via CLI usando o nome da pasta como nome da função
+              # 1. Update do Código (Ignorando o arquivo de infraestrutura)
+              zip -q -r function.zip . -x "config.json"
+              
+              echo "Fazendo upload do código..."
               aws lambda update-function-code \
                 --function-name "$dir" \
-                --zip-file "fileb://function.zip"
+                --zip-file "fileb://function.zip" > /dev/null
               
-              # Limpeza
+              # Aguarda a AWS processar o novo código (Evita o erro "ResourceConflictException")
+              aws lambda wait function-updated --function-name "$dir"
+              
               rm function.zip
-              cd ../../
               
+              # 2. Update da Infraestrutura (Update Only, protegendo Env Vars)
+              if [ -f "config.json" ]; then
+                echo "Atualizando configurações (Memória, Timeout, Runtime)..."
+                
+                HANDLER=$(jq -r '.Handler' config.json)
+                RUNTIME=$(jq -r '.Runtime' config.json)
+                MEMORY=$(jq -r '.MemorySize' config.json)
+                TIMEOUT=$(jq -r '.Timeout' config.json)
+                
+                # O parâmetro --environment NÃO é passado. Segredos continuam seguros na nuvem.
+                aws lambda update-function-configuration \
+                  --function-name "$dir" \
+                  --handler "$HANDLER" \
+                  --runtime "$RUNTIME" \
+                  --memory-size "$MEMORY" \
+                  --timeout "$TIMEOUT" > /dev/null
+              fi
+              
+              cd ../../
               echo "✅ $dir atualizada com sucesso."
             fi
           done

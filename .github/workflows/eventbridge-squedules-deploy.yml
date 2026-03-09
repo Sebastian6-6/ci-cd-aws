@@ -1,16 +1,16 @@
-name: CD EventBridge
+name: CD EventBridge Schedules - Sync
 
 on:
   push:
     branches: [main]
-    paths: ['eventbridge/**']
+    paths: ['eventbridge/cronogramas/**']
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  deploy:
+  deploy-schedules:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,20 +19,18 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      # Deploy de Rules
-      - name: Sync Rules
-        run: |
-          for file in eventbridge/regras/*.json; do
-            NAME=$(basename "$file" .json)
-            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' "$file")
-            TARGETS_JSON=$(jq -c '.Targets' "$file")
-            aws events put-rule --cli-input-json "$RULE_JSON"
-            aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
-          done
-
-      # Deploy de Schedules
-      - name: Sync Schedules
+      - name: Update EventBridge Schedules
         run: |
           for file in eventbridge/cronogramas/*.json; do
-            aws scheduler update-schedule --cli-input-json "file://$file"
+            [ -e "$file" ] || continue
+            NAME=$(basename "$file" .json)
+            echo "--- Atualizando Schedule: $NAME ---"
+            
+            # Higieniza os nulls do schedule
+            jq 'del(..|nulls)' "$file" > clean.json
+            
+            # Falhará intencionalmente se o Schedule não existir (comportamento estrito de Update)
+            aws scheduler update-schedule --name "$NAME" --cli-input-json "file://clean.json"
+            
+            rm clean.json
           done

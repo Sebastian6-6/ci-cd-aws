@@ -1,14 +1,21 @@
 {
+  "ActionAfterCompletion": "NONE",
   "FlexibleTimeWindow": {
     "Mode": "OFF"
   },
   "GroupName": "default",
   "Name": "trigger-glue-diario",
-  "ScheduleExpression": "cron(0 13 1 4 ? 2026)",
+  "ScheduleExpression": "cron(0 23 1 4 ? 2026)",
+  "ScheduleExpressionTimezone": "America/Sao_Paulo",
   "State": "ENABLED",
   "Target": {
     "Arn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
+    "DeadLetterConfig": null,
     "Input": "{}",
+    "RetryPolicy": {
+      "MaximumEventAgeInSeconds": 86400,
+      "MaximumRetryAttempts": 185
+    },
     "RoleArn": "arn:aws:iam::338578590490:role/Scheduler-Invoke-Lambda-Role"
   }
 }

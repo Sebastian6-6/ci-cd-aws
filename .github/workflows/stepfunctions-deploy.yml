@@ -19,37 +19,41 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Sync Step Functions (Robust Deploy)
+      - name: Update Step Functions
         run: |
-          for file in stepfunctions/*.json; do
-            [ "$file" == "stepfunctions/manifest.json" ] && continue
-            NAME=$(basename "$file" .json)
-            echo "--- Sincronizando State Machine: $NAME ---"
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGION="us-east-2"
 
-            # 1. Busca o ARN (Sempre dinâmico para evitar quebra entre contas)
-            ARN=$(aws stepfunctions list-state-machines --query "stateMachines[?name=='$NAME'].stateMachineArn" --output text)
+          for file in stepfunctions/*.json; do
+            [ -e "$file" ] || continue
+            NAME=$(basename "$file" .json)
+            ARN="arn:aws:states:${REGION}:${ACCOUNT_ID}:stateMachine:${NAME}"
             
-            if [ "$ARN" == "None" ] || [ -z "$ARN" ]; then
-              echo "❌ Erro: State Machine $NAME não encontrada." && exit 1
+            echo "--- Atualizando: $NAME ---"
+
+            # 1. Higieniza os nulls do arquivo root para um arquivo temporário limpo
+            jq 'del(..|nulls)' "$file" > clean.json
+
+            # 2. Extração segura a partir do arquivo limpo
+            ROLE_ARN=$(jq -r '.roleArn' clean.json)
+            jq -c '.definition' clean.json > definition.json
+            
+            # 3. Construção dinâmica do comando (Evita passar argumentos vazios/nulos para a CLI)
+            CMD=("aws" "stepfunctions" "update-state-machine" "--state-machine-arn" "$ARN" "--role-arn" "$ROLE_ARN" "--definition" "file://definition.json")
+
+            # Verifica se as chaves opcionais existem no arquivo limpo antes de anexá-las
+            if jq -e '.loggingConfiguration' clean.json > /dev/null; then
+              jq -c '.loggingConfiguration' clean.json > logging.json
+              CMD+=("--logging-configuration" "file://logging.json")
             fi
 
-            # 2. Extração via JQ (Filtro Cirúrgico)
-            # Extraímos os blocos para arquivos temporários para evitar erros de escape no shell
-            jq -c '.definition' "$file" > definition.json
-            jq -c '.loggingConfiguration' "$file" > logging.json
-            jq -c '.tracingConfiguration' "$file" > tracing.json
-            ROLE_ARN=$(jq -r '.roleArn' "$file")
+            if jq -e '.tracingConfiguration' clean.json > /dev/null; then
+              jq -c '.tracingConfiguration' clean.json > tracing.json
+              CMD+=("--tracing-configuration" "file://tracing.json")
+            fi
 
-            # 3. Update Robusto (Sincroniza Definição, Role, Log e Trace)
-            aws stepfunctions update-state-machine \
-              --state-machine-arn "$ARN" \
-              --role-arn "$ROLE_ARN" \
-              --definition "file://definition.json" \
-              --logging-configuration "file://logging.json" \
-              --tracing-configuration "file://tracing.json"
+            # 4. Executa o comando construído
+            "${CMD[@]}"
             
-            # 4. Cleanup
-            rm definition.json logging.json tracing.json
-            
-            echo "✅ $NAME atualizada com sucesso v2.0."
+            rm clean.json definition.json logging.json tracing.json || true
           done
