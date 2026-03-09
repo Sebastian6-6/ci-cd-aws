@@ -19,17 +19,37 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Sync Step Functions
+      - name: Sync Step Functions (Robust Deploy)
         run: |
           for file in stepfunctions/*.json; do
+            [ "$file" == "stepfunctions/manifest.json" ] && continue
             NAME=$(basename "$file" .json)
+            echo "--- Sincronizando State Machine: $NAME ---"
+
+            # 1. Busca o ARN (Sempre dinâmico para evitar quebra entre contas)
             ARN=$(aws stepfunctions list-state-machines --query "stateMachines[?name=='$NAME'].stateMachineArn" --output text)
-            # Transforma o objeto definition em uma string JSON escapada
-            DEF_STR=$(jq -c '.definition' "$file" | jq -Rs .)
-            ROLE=$(jq -r '.roleArn' "$file")
             
+            if [ "$ARN" == "None" ] || [ -z "$ARN" ]; then
+              echo "❌ Erro: State Machine $NAME não encontrada." && exit 1
+            fi
+
+            # 2. Extração via JQ (Filtro Cirúrgico)
+            # Extraímos os blocos para arquivos temporários para evitar erros de escape no shell
+            jq -c '.definition' "$file" > definition.json
+            jq -c '.loggingConfiguration' "$file" > logging.json
+            jq -c '.tracingConfiguration' "$file" > tracing.json
+            ROLE_ARN=$(jq -r '.roleArn' "$file")
+
+            # 3. Update Robusto (Sincroniza Definição, Role, Log e Trace)
             aws stepfunctions update-state-machine \
               --state-machine-arn "$ARN" \
-              --role-arn "$ROLE" \
-              --definition "$DEF_STR"
+              --role-arn "$ROLE_ARN" \
+              --definition "file://definition.json" \
+              --logging-configuration "file://logging.json" \
+              --tracing-configuration "file://tracing.json"
+            
+            # 4. Cleanup
+            rm definition.json logging.json tracing.json
+            
+            echo "✅ $NAME atualizada com sucesso v2.0."
           done
