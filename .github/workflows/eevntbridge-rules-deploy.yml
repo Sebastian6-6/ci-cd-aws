@@ -1,0 +1,39 @@
+name: CD EventBridge Rules - Sync
+
+on:
+  push:
+    branches: [main]
+    paths: ['eventbridge/regras/**']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Sync EventBridge Rules
+        run: |
+          for file in eventbridge/regras/*.json; do
+            NAME=$(basename "$file" .json)
+            echo "--- Sincronizando Regra: $NAME ---"
+            
+            # 1. Prepara o JSON da Rule (Stringify no EventPattern)
+            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' "$file")
+            
+            # 2. Prepara o JSON dos Targets
+            TARGETS_JSON=$(jq -c '.Targets' "$file")
+            
+            # 3. Deploy
+            aws events put-rule --cli-input-json "$RULE_JSON"
+            aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
+            
+            echo "✅ Regra e Targets de $NAME atualizados."
+          done

@@ -1,0 +1,17 @@
+{
+  "Command": {
+    "Name": "glueetl",
+    "PythonVersion": "3",
+    "ScriptLocation": "s3://scripts-automacao-pedro/artifacts/scripts/cola.py"
+  },
+  "DefaultArguments": {
+    "--JOB_NAME": "job-test-cola",
+    "--enable-job-insights": "true",
+    "--job-language": "python"
+  },
+  "GlueVersion": "4.0",
+  "Name": "job-test-cola",
+  "NumberOfWorkers": 2,
+  "Role": "arn:aws:iam::338578590490:role/GlueServiceRole",
+  "WorkerType": "G.1X"
+}

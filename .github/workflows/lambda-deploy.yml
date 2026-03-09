@@ -1,9 +1,9 @@
-name: CD Lambda - Auto Sync
+name: CD Lambda - Dynamic Sync
 
 on:
   push:
     branches: [ main ]
-    paths: [ 'lambda/lambda-teste/**' ] # Só roda se mudar algo nesta pasta
+    paths: [ 'lambda/**' ] # Monitora qualquer mudança dentro da pasta lambda
 
 permissions:
   id-token: write
@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2 # Necessário para o git diff identificar mudanças
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -22,13 +24,29 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Zip and Update Lambda
+      - name: Identify and Update Changed Lambdas
         run: |
-          # Entra na pasta da função para o zip não ter pastas aninhadas
-          cd lambda/lambda-teste/
-          zip -r function.zip .
-          
-          # Atualiza o código na AWS
-          aws lambda update-function-code \
-            --function-name lambda-teste \
-            --zip-file fileb://function.zip
+          # 1. Identifica quais pastas dentro de /lambda foram alteradas neste commit
+          CHANGED_DIRS=$(git diff --name-only HEAD^ HEAD | grep '^lambda/' | cut -d/ -f2 | sort -u)
+
+          for dir in $CHANGED_DIRS; do
+            if [ -d "lambda/$dir" ]; then
+              echo "🚀 Processando deploy da Lambda: $dir"
+              
+              # 2. Entra na pasta e gera o ZIP
+              # O parâmetro -x exclui o .aws_hash para não sujar o ambiente da AWS
+              cd "lambda/$dir"
+              zip -r function.zip . -x ".aws_hash"
+              
+              # 3. Deploy via CLI usando o nome da pasta como nome da função
+              aws lambda update-function-code \
+                --function-name "$dir" \
+                --zip-file "fileb://function.zip"
+              
+              # Limpeza
+              rm function.zip
+              cd ../../
+              
+              echo "✅ $dir atualizada com sucesso."
+            fi
+          done

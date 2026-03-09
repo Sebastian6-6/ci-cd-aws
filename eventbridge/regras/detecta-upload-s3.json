@@ -1,6 +1,5 @@
 {
   "Rule": {
-    "Description": "AGORA TEM DESCRIÇÃO",
     "EventPattern": {
       "detail": {
         "bucket": {
@@ -22,8 +21,7 @@
   "Targets": [
     {
       "Arn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
-      "Id": "73f99320-ab81-4be3-b7bf-8d564b963027",
-      "RoleArn": "arn:aws:iam::338578590490:role/service-role/Amazon_EventBridge_Invoke_Lambda_1686998167"
+      "Id": "73f99320-ab81-4be3-b7bf-8d564b963027"
     }
   ]
 }

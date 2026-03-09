@@ -1,0 +1,42 @@
+name: CD Glue Jobs - Metadata Update
+
+on:
+  push:
+    branches: [main]
+    paths: ['glue/jobs/*.json']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Update Glue Job Entities
+        run: |
+          for file in glue/jobs/*.json; do
+            NAME=$(basename "$file" .json)
+            echo "--- Sincronizando Metadata do Job: $NAME ---"
+            
+            # Validação de sintaxe JSON
+            jq . "$file" > /dev/null || exit 1
+
+            # Extrai o corpo da configuração removendo o Name para a API
+            # O parâmetro --job-name é passado separadamente
+            JOB_CONFIG=$(jq -c 'del(.Name)' "$file")
+            
+            aws glue update-job \
+              --job-name "$NAME" \
+              --job-update "$JOB_CONFIG"
+            
+            echo "✅ Configuração de $NAME atualizada."
+          done

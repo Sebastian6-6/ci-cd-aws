@@ -1,0 +1,35 @@
+name: CD Glue Libs - S3 Sync
+
+on:
+  push:
+    branches: [main]
+    paths: ['glue/libs/**']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-libs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-2
+
+      - name: Safety Check and Sync Libs
+        run: |
+          FILE_COUNT=$(find glue/libs -maxdepth 1 -type f | wc -l)
+          echo "Libs encontradas: $FILE_COUNT"
+
+          if [ "$FILE_COUNT" -eq 0 ]; then
+            echo "❌ ERRO: Pasta glue/libs/ vazia. Abortando para proteger o S3."
+            exit 1
+          fi
+
+          aws s3 sync glue/libs/ s3://scripts-automacao-pedro/artifacts/libs/ --delete
+          echo "✅ Bibliotecas sincronizadas com sucesso."
