@@ -4,7 +4,7 @@ from datetime import datetime
 
 # 1. Trava de Segurança para o GitHub Actions
 if os.getenv('GITHUB_ACTIONS') == 'true':
-    print("Validação de sintaxe concluída para a Versão 3.0. teste top ta top memo")
+    print("Validação de sintaxe concluída para a Versão 4.0.")
     sys.exit(0)
 
 from awsglue.utils import getResolvedOptions

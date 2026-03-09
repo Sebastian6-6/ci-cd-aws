@@ -5,7 +5,7 @@
       "PassState": {
         "End": true,
         "Result": {
-          "mensagem": "Workflow de Step Functions TOP DEMAIS 2.0!",
+          "mensagem": "Workflow de Step Functions Funcionando!",
           "status": "v2.0_via_github_actions"
         },
         "Type": "Pass"

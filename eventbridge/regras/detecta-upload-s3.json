@@ -1,6 +1,6 @@
 {
   "Rule": {
-    "Description": "",
+    "Description": "AGORA TEM DESCRIÇÃO",
     "EventPattern": {
       "detail": {
         "bucket": {
