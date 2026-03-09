@@ -19,11 +19,28 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Sync Libraries to S3
+      - name: Drift Detection (Auditoria de Libs Órfãs)
         run: |
-          echo "--- Sincronizando Bibliotecas e Dependências (Wheels/Zips) ---"
-          aws s3 sync ./glue/libs/ s3://scripts-automacao-pedro/artifacts/libs/ \
+          echo "🔍 Analisando discrepâncias entre dependências locais e no S3..."
+          DRIFT_REPORT=$(aws s3 sync ./glue/libs/ s3://scripts-automacao-pedro/artifacts/libs/ \
             --delete \
+            --dryrun \
+            --exclude "*" \
+            --include "*.whl" \
+            --include "*.zip" \
+            --include "*.jar" | grep "delete:" || true)
+          
+          if [ -n "$DRIFT_REPORT" ]; then
+            echo "⚠️ ATENÇÃO: Os seguintes pacotes existem no S3 mas não estão no Git:"
+            echo "$DRIFT_REPORT"
+          else
+            echo "✅ S3 e Git estão perfeitamente sincronizados."
+          fi
+
+      - name: Sync Libraries to S3 (Append-Only)
+        run: |
+          echo "--- Sincronizando Bibliotecas (Sem Deleção) ---"
+          aws s3 sync ./glue/libs/ s3://scripts-automacao-pedro/artifacts/libs/ \
             --exact-timestamps \
             --exclude "*" \
             --include "*.whl" \

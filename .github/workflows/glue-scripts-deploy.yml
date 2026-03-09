@@ -19,13 +19,28 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Sync Scripts to S3
+      - name: Drift Detection (Auditoria de Scripts Órfãos)
         run: |
-          echo "--- Sincronizando Scripts PySpark/Python ---"
-          # O parâmetro --delete garante o GitOps: se você apagar o script no Git, ele apaga no S3
-          # O parâmetro --exact-timestamps força a verificação rigorosa de modificação
-          aws s3 sync ./glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ \
+          echo "🔍 Analisando discrepâncias entre o Git e o S3..."
+          # O --dryrun simula a deleção para gerar log, mas não altera a nuvem
+          DRIFT_REPORT=$(aws s3 sync ./glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ \
             --delete \
+            --dryrun \
+            --exclude "*" \
+            --include "*.py" | grep "delete:" || true)
+          
+          if [ -n "$DRIFT_REPORT" ]; then
+            echo "⚠️ ATENÇÃO: Os seguintes scripts existem no S3 mas não estão no Git:"
+            echo "$DRIFT_REPORT"
+            echo "Estes arquivos representam débito técnico ou edições manuais."
+          else
+            echo "✅ S3 e Git estão perfeitamente sincronizados."
+          fi
+
+      - name: Sync Scripts to S3 (Append-Only)
+        run: |
+          echo "--- Sincronizando Scripts PySpark/Python (Sem Deleção) ---"
+          aws s3 sync ./glue/scripts/ s3://scripts-automacao-pedro/artifacts/scripts/ \
             --exact-timestamps \
             --exclude "*" \
             --include "*.py"
