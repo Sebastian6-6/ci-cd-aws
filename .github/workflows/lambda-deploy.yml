@@ -1,4 +1,4 @@
-name: CD Lambda - Dynamic Sync
+name: CD Lambda
 
 on:
   push:
