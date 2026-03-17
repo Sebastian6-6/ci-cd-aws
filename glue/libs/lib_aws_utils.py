@@ -1,0 +1,1 @@
+print('LIB: lib_aws_utils.py - Funcoes de S3 e Boto3')

@@ -1,0 +1,1 @@
+print('LIB: lib_data_quality.py - Validacao de nulos e schemas')

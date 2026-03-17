@@ -1,8 +1,52 @@
 {
-  "Environment": {},
+  "Architectures": [
+    "x86_64"
+  ],
+  "CodeSha256": "wEzu2E0JzBSiDNqMsVFNv6OkWIev5g3aBBK7JJGtFxo=",
+  "CodeSize": 334,
+  "DeadLetterConfig": null,
+  "Description": "",
+  "Environment": null,
+  "EphemeralStorage": {
+    "Size": 512
+  },
+  "FileSystemConfigs": null,
+  "FunctionArn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
+  "FunctionName": "lambda-teste",
   "Handler": "lambda_function.lambda_handler",
-  "Layers": [],
+  "ImageConfigResponse": null,
+  "KMSKeyArn": null,
+  "LastModified": "2026-03-09T19:14:19.000+0000",
+  "LastUpdateStatus": "Successful",
+  "LastUpdateStatusReason": null,
+  "LastUpdateStatusReasonCode": null,
+  "Layers": null,
+  "LoggingConfig": {
+    "LogFormat": "Text",
+    "LogGroup": "/aws/lambda/lambda-teste"
+  },
+  "MasterArn": null,
   "MemorySize": 128,
+  "PackageType": "Zip",
+  "RevisionId": "a46e1fa6-0b07-4b14-86dc-6f127eb4ddf4",
+  "Role": "arn:aws:iam::338578590490:role/service-role/lambda-teste-role-jmalgzg0",
   "Runtime": "python3.14",
-  "Timeout": 3
+  "RuntimeVersionConfig": {
+    "RuntimeVersionArn": "arn:aws:lambda:us-east-2::runtime:6e4c2a8804e47c3599d89c0a896af2312961578a5546d2d9a288c0d93e6b1a2d"
+  },
+  "SigningJobArn": null,
+  "SigningProfileVersionArn": null,
+  "SnapStart": {
+    "ApplyOn": "None",
+    "OptimizationStatus": "Off"
+  },
+  "State": "Active",
+  "StateReason": null,
+  "StateReasonCode": null,
+  "Timeout": 3,
+  "TracingConfig": {
+    "Mode": "PassThrough"
+  },
+  "Version": "$LATEST",
+  "VpcConfig": null
 }

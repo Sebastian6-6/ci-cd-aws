@@ -1,6 +1,9 @@
 {
+  "EventBusName": "default",
   "Rule": {
+    "Arn": "arn:aws:events:us-east-2:338578590490:rule/teste-rule-pessoal",
     "Description": null,
+    "EventBusName": "default",
     "EventPattern": {
       "detail-type": [
         "Object Created"
@@ -9,18 +12,31 @@
         "aws.s3"
       ]
     },
+    "ManagedBy": null,
     "Name": "teste-rule-pessoal",
+    "RoleArn": null,
+    "ScheduleExpression": null,
     "State": "ENABLED"
   },
   "Targets": [
     {
+      "AppSyncParameters": null,
       "Arn": "arn:aws:states:us-east-2:338578590490:stateMachine:teste-sfn-pessoal",
+      "BatchParameters": null,
       "DeadLetterConfig": null,
+      "EcsParameters": null,
+      "HttpParameters": null,
       "Id": "5031ce8a-85d7-428e-8d56-389d0ceafdb5",
       "Input": null,
       "InputPath": null,
+      "InputTransformer": null,
+      "KinesisParameters": null,
+      "RedshiftDataParameters": null,
       "RetryPolicy": null,
-      "RoleArn": "arn:aws:iam::338578590490:role/service-role/Amazon_EventBridge_Invoke_StepFunctions_410157583"
+      "RoleArn": "arn:aws:iam::338578590490:role/service-role/Amazon_EventBridge_Invoke_StepFunctions_410157583",
+      "RunCommandParameters": null,
+      "SageMakerPipelineParameters": null,
+      "SqsParameters": null
     }
   ]
 }

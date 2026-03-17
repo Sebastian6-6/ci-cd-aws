@@ -1,15 +1,14 @@
 {
-  "JobName": "job-test-cola",
+  "JobName": "Job_Hubspot",
   "JobUpdate": {
     "CodeGenConfigurationNodes": null,
     "Command": {
-      "Name": "glueetl",
-      "PythonVersion": "3",
-      "ScriptLocation": "s3://scripts-automacao-pedro/artifacts/scripts/cola.py"
+      "Name": "pythonshell",
+      "PythonVersion": "3.9",
+      "ScriptLocation": "s3://scripts-automacao-pedro/artifacts/scripts/ext_crm_hubspot.py"
     },
     "Connections": null,
     "DefaultArguments": {
-      "--JOB_NAME": "job-test-cola",
       "--TempDir": null,
       "--additional-python-modules": null,
       "--class": null,
@@ -18,14 +17,14 @@
       "--enable-continuous-cloudwatch-log": null,
       "--enable-continuous-log-filter": null,
       "--enable-glue-datacatalog": null,
-      "--enable-job-insights": "true",
+      "--enable-job-insights": null,
       "--enable-metrics": null,
       "--enable-spark-ui": null,
       "--extra-files": null,
       "--extra-jars": null,
-      "--extra-py-files": "s3://scripts-automacao-pedro/artifacts/libs/et_xmlfile-2.0.0-py3-none-any.whl",
+      "--extra-py-files": "s3://scripts-automacao-pedro/artifacts/libs/lib_aws_utils.py",
       "--job-bookmark-option": null,
-      "--job-language": "python",
+      "--job-language": null,
       "--spark-event-logs-path": null
     },
     "Description": null,
@@ -35,16 +34,16 @@
     },
     "GlueVersion": "4.0",
     "LogUri": null,
-    "MaxCapacity": 2.0,
+    "MaxCapacity": 0.0625,
     "MaxRetries": 0,
     "NonOverridableArguments": null,
     "NotificationProperty": null,
-    "NumberOfWorkers": 2,
+    "NumberOfWorkers": null,
     "Role": "arn:aws:iam::338578590490:role/GlueServiceRole",
     "SecurityConfiguration": null,
     "SourceControlDetails": null,
     "Timeout": 2880,
-    "WorkerType": "G.1X"
+    "WorkerType": null
   },
   "Tags": {}
 }

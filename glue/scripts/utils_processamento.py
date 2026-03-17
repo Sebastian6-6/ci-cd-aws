@@ -1,0 +1,1 @@
+print('SCRIPT: utils_processamento.py | CONTEUDO B2 - CUIDADO MIGRACAO')

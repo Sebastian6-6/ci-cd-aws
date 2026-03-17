@@ -1,0 +1,1 @@
+print('SCRIPT: load_api_parceiros.py | Origem: B2')

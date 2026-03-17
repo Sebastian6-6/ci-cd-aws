@@ -1,0 +1,1 @@
+print('SCRIPT: relatorio_fechamento.py | Origem: B2')

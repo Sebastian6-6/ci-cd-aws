@@ -1,26 +1,27 @@
 {
   "EventBusName": "default",
   "Rule": {
-    "Arn": "arn:aws:events:us-east-2:338578590490:rule/detecta-upload-s3",
-    "Description": "muito DAORA",
+    "Arn": "arn:aws:events:us-east-2:338578590490:rule/StepFunctionsGetEventsForStepFunctionsExecutionRule",
+    "Description": "This rule is used to notify Step Functions regarding integrated workflow executions",
     "EventBusName": "default",
     "EventPattern": {
       "detail": {
-        "bucket": {
-          "name": [
-            "scripts-automacao-pedro"
-          ]
-        }
+        "status": [
+          "FAILED",
+          "SUCCEEDED",
+          "TIMED_OUT",
+          "ABORTED"
+        ]
       },
       "detail-type": [
-        "Object Created"
+        "Step Functions Execution Status Change"
       ],
       "source": [
-        "aws.s3"
+        "aws.states"
       ]
     },
-    "ManagedBy": null,
-    "Name": "detecta-upload-s3",
+    "ManagedBy": "states.amazonaws.com",
+    "Name": "StepFunctionsGetEventsForStepFunctionsExecutionRule",
     "RoleArn": null,
     "ScheduleExpression": null,
     "State": "ENABLED"
@@ -28,12 +29,12 @@
   "Targets": [
     {
       "AppSyncParameters": null,
-      "Arn": "arn:aws:lambda:us-east-2:338578590490:function:lambda-teste",
+      "Arn": "arn:aws:states:us-east-2:::",
       "BatchParameters": null,
       "DeadLetterConfig": null,
       "EcsParameters": null,
       "HttpParameters": null,
-      "Id": "73f99320-ab81-4be3-b7bf-8d564b963027",
+      "Id": "StepFunctionsGetEventsForStepFunctionsExecutionRule-Id",
       "Input": null,
       "InputPath": null,
       "InputTransformer": null,

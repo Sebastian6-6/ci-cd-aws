@@ -1,0 +1,1 @@
+print('SCRIPT: config_banco.py | CONTEUDO B2 - CUIDADO MIGRACAO')

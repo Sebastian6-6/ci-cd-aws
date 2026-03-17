@@ -1,0 +1,1 @@
+print('SCRIPT: trs_padronizacao_ceps.py | Origem: B2')

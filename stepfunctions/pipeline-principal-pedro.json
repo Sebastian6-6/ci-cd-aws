@@ -1,4 +1,5 @@
 {
+  "creationDate": "2026-03-06T17:49:26.219000-03:00",
   "definition": {
     "StartAt": "PassState",
     "States": {
@@ -12,13 +13,19 @@
       }
     }
   },
+  "description": null,
+  "label": null,
   "loggingConfiguration": {
     "includeExecutionData": false,
     "level": "OFF"
   },
+  "name": "pipeline-principal-pedro",
   "roleArn": "arn:aws:iam::338578590490:role/service-role/StepFunctions-pipeline-principal-pedro-role-4x842wocd",
+  "stateMachineArn": "arn:aws:states:us-east-2:338578590490:stateMachine:pipeline-principal-pedro",
+  "status": "ACTIVE",
   "tracingConfiguration": {
     "enabled": false
   },
-  "type": "STANDARD"
+  "type": "STANDARD",
+  "versionDescription": null
 }

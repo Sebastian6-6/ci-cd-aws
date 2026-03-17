@@ -1,4 +1,5 @@
 {
+  "creationDate": "2026-03-08T14:24:24.520000-03:00",
   "definition": {
     "Comment": "A description of my state machine",
     "QueryLanguage": "JSONata",
@@ -18,13 +19,19 @@
       }
     }
   },
+  "description": null,
+  "label": null,
   "loggingConfiguration": {
     "includeExecutionData": false,
     "level": "OFF"
   },
+  "name": "teste-sfn-pessoal",
   "roleArn": "arn:aws:iam::338578590490:role/service-role/StepFunctions-teste-sfn-pessoal-role-u9xrl5acz",
+  "stateMachineArn": "arn:aws:states:us-east-2:338578590490:stateMachine:teste-sfn-pessoal",
+  "status": "ACTIVE",
   "tracingConfiguration": {
     "enabled": false
   },
-  "type": "STANDARD"
+  "type": "STANDARD",
+  "versionDescription": null
 }

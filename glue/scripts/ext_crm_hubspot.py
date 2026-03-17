@@ -1,0 +1,1 @@
+print('SCRIPT: ext_crm_hubspot.py | Origem: B2')
