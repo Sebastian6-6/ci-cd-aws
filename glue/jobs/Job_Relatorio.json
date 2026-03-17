@@ -22,7 +22,7 @@
       "--enable-spark-ui": null,
       "--extra-files": null,
       "--extra-jars": null,
-      "--extra-py-files": "s3://scripts-automacao-pedro/artifacts/libs/lib_aws_utils.py",
+      "--extra-py-files": "s3://scripts-automacao-pedro/artifacts/libs/et_xmlfile-2.0.0-py3-none-any.whl",
       "--job-bookmark-option": null,
       "--job-language": null,
       "--spark-event-logs-path": null

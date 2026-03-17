@@ -1,7 +1,7 @@
 {
   "ActionAfterCompletion": "NONE",
   "Arn": "arn:aws:scheduler:us-east-2:338578590490:schedule/default/teste-sched-pessoal",
-  "Description": null,
+  "Description": "UI",
   "EndDate": null,
   "FlexibleTimeWindow": {
     "Mode": "OFF"

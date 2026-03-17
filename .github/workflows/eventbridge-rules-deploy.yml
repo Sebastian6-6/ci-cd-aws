@@ -21,24 +21,28 @@ jobs:
 
       - name: Update EventBridge Rules
         run: |
+          # Garante que qualquer erro pare a pipeline imediatamente
+          set -euo pipefail
+          
           for file in eventbridge/regras/*.json; do
             [ -e "$file" ] || continue
             NAME=$(basename "$file" .json)
             echo "--- Atualizando Regra: $NAME ---"
             
-            # Higieniza TODOS os nulls antes de formatar para o CLI
-            jq 'del(..|nulls)' "$file" > clean.json
+            # Extrai e formata a Rule. O tojson garante que o EventPattern vire string se for objeto
+            jq -c 'del(..|nulls) | .Rule | if type == "object" and .EventPattern then .EventPattern |= (if type == "string" then . else tojson end) else . end' "$file" > rule_cli.json
             
-            RULE_JSON=$(jq -c '.Rule | .EventPattern = (.EventPattern | tojson)' clean.json)
-            TARGETS_JSON=$(jq -c '.Targets' clean.json)
+            aws events put-rule --name "$NAME" --cli-input-json file://rule_cli.json
             
-            # put-rule atua como update nativamente se a regra existir
-            aws events put-rule --cli-input-json "$RULE_JSON"
+            # Navegação segura: verifica se a chave Targets existe e tem elementos
+            HAS_TARGETS=$(jq 'if .Targets and (.Targets | length > 0) then 1 else 0 end' "$file")
             
-            TARGET_COUNT=$(jq '.Targets | length' clean.json)
-            if [ "$TARGET_COUNT" -gt 0 ]; then
-              aws events put-targets --rule "$NAME" --targets "$TARGETS_JSON"
+            if [ "$HAS_TARGETS" -eq 1 ]; then
+              echo "Atualizando Targets..."
+              jq -c 'del(..|nulls) | .Targets' "$file" > targets_cli.json
+              aws events put-targets --rule "$NAME" --targets file://targets_cli.json
+              rm -f targets_cli.json
             fi
             
-            rm clean.json
+            rm -f rule_cli.json
           done

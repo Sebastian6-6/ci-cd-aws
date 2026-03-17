@@ -1,4 +1,4 @@
-name: CD EventBridge Schedules - Sync
+name: CD CD EventBridge Schedules - Sync
 
 on:
   push:
@@ -19,18 +19,25 @@ jobs:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: us-east-2
 
-      - name: Update EventBridge Schedules
+      - name: Upsert EventBridge Schedules
         run: |
+          set -euo pipefail
+          
           for file in eventbridge/cronogramas/*.json; do
             [ -e "$file" ] || continue
             NAME=$(basename "$file" .json)
-            echo "--- Atualizando Schedule: $NAME ---"
+            echo "--- Sincronizando Schedule: $NAME ---"
             
-            # Higieniza os nulls do schedule
-            jq 'del(..|nulls)' "$file" > clean.json
+            jq -c 'del(..|nulls)' "$file" > sched_cli.json
             
-            # Falhará intencionalmente se o Schedule não existir (comportamento estrito de Update)
-            aws scheduler update-schedule --name "$NAME" --cli-input-json "file://clean.json"
+            # Checa silenciosamente se o Schedule existe
+            if aws scheduler get-schedule --name "$NAME" > /dev/null 2>&1; then
+              echo "Schedule existente encontrado. Aplicando Update..."
+              aws scheduler update-schedule --name "$NAME" --cli-input-json file://sched_cli.json
+            else
+              echo "Schedule não encontrado. Aplicando Create..."
+              aws scheduler create-schedule --name "$NAME" --cli-input-json file://sched_cli.json
+            fi
             
-            rm clean.json
+            rm -f sched_cli.json
           done

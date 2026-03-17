@@ -21,32 +21,35 @@ jobs:
 
       - name: Update Glue Jobs and Tags
         run: |
+          set -euo pipefail
+          
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           REGION="us-east-2"
 
           for file in glue/jobs/*.json; do
             [ -e "$file" ] || continue
-            NAME=$(jq -r '.JobName' "$file")
+            
+            # Extração segura do nome, com fallback para o nome do arquivo
+            NAME=$(jq -r '.JobName // empty' "$file")
+            if [ -z "$NAME" ]; then NAME=$(basename "$file" .json); fi
+            
             echo "--- Atualizando Job: $NAME ---"
             
-            # 1. Higieniza os nulos apenas do bloco de configuração (Isolamento de falhas)
             jq -c '.JobUpdate | del(..|nulls)' "$file" > update_payload.json
+            aws glue update-job --job-name "$NAME" --job-update file://update_payload.json
             
-            # 2. Atualiza a infraestrutura do Job
-            aws glue update-job --job-name "$NAME" --job-update "file://update_payload.json"
+            HAS_TAGS=$(jq 'if .Tags and (.Tags | length > 0) then 1 else 0 end' "$file")
             
-            # 3. Tratamento de Governança (Tags)
-            # O jq 'length' verifica se o dicionário de tags não está vazio
-            TAGS_COUNT=$(jq '.Tags | length' "$file")
-            if [ "$TAGS_COUNT" -gt 0 ]; then
+            if [ "$HAS_TAGS" -eq 1 ]; then
               echo "Aplicando Tags de Governança..."
               JOB_ARN="arn:aws:glue:${REGION}:${ACCOUNT_ID}:job/${NAME}"
               
-              # Converte o dicionário JSON nativo para o formato Key=Value esperado pela CLI da AWS
-              TAGS_STRING=$(jq -r '.Tags | to_entries | map("\(.key)=\(.value)") | join(",")' "$file")
+              # A API prefere receber o JSON nativo ao invés da string convertida
+              jq -c '.Tags | del(..|nulls)' "$file" > tags_payload.json
               
-              aws glue tag-resource --resource-arn "$JOB_ARN" --tags-to-add "$TAGS_STRING"
+              aws glue tag-resource --resource-arn "$JOB_ARN" --tags-to-add file://tags_payload.json
+              rm -f tags_payload.json
             fi
             
-            rm update_payload.json
+            rm -f update_payload.json
           done

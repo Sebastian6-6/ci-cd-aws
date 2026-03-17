@@ -2,7 +2,7 @@
   "EventBusName": "default",
   "Rule": {
     "Arn": "arn:aws:events:us-east-2:338578590490:rule/detecta-upload-s3",
-    "Description": "muito DAORA",
+    "Description": "muito TOP",
     "EventBusName": "default",
     "EventPattern": {
       "detail": {
